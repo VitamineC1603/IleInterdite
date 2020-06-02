@@ -42,3 +42,5 @@ Toutes les actions de joueurs sont effectuées à l'aide de boutons :
 Je n'a pas réussi à implémenter le panneau affichant les artefacts et les clés possédés par les joueurs, ceux-ci sont cependant affichés dans le terminal.
 
 Pour la partie 4 j'ai implémenté l'échange de clés, chaque joueur peut donner la première clé de sont inventaire à un autre joueur présent sur la même case que lui.
+
+La version actuelle de ma gestion des déplacements ne me permet pas d'implémenter des déplacements plus complexes. Des remaniements seraient nécessaires pour ajouter des personnages particuliers pouvant effectuer des actions uniques.
