@@ -41,4 +41,4 @@ Toutes les actions de joueurs sont effectuées à l'aide de boutons :
 
 Je n'a pas réussi à implémenter le panneau affichant les artefacts et les clés possédés par les joueurs, ceux-ci sont cependant affichés dans le terminal.
 
-Pour la partie 4 j'ai implémenté l'échange de clés, chaque joueur peut donner la première clé de sont inventaire à un autre joueur.
+Pour la partie 4 j'ai implémenté l'échange de clés, chaque joueur peut donner la première clé de sont inventaire à un autre joueur présent sur la même case que lui.
