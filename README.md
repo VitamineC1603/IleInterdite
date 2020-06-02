@@ -38,3 +38,7 @@ Toutes les actions de joueurs sont effectuées à l'aide de boutons :
 - les boutons de déplacement : haut, bas, gauche, droite représentés avec les labels ^, v, <, >;
 - les boutons pour assécher : assechHaut, assechBas, assechGauche, assechDroite, assechIci(pour assécher la zone sur laquelle le joueur se situe);
 - le bouton "deverouiller" pour récupérer un artefact situé sur la zone sur laquelle le joueur se situe.
+
+Je n'a pas réussi à implémenter le panneau affichant les artefacts et les clés possédés par les joueurs, ceux-ci sont cependant affichés dans le terminal.
+
+Pour la partie 4 j'ai implémenté l'échange de clés, chaque joueur peut donner la première clé de sont inventaire à un autre joueur.
