@@ -34,8 +34,9 @@ public class IleInterdite {
 	}
 }
 
+
 class CModele extends Observable {
-    public static final int HAUTEUR=5, LARGEUR=6;
+    public static final int HAUTEUR=8, LARGEUR=8;
     private Zone[][] zones;
     public int nbsubmergees;
     public ArrayList<Joueur> joueurs;
@@ -43,6 +44,8 @@ class CModele extends Observable {
     private int nbActions;
     public ArrayList<Artefact> artefacts;
     public ArrayList<CleArtefact> cles;
+    public boolean artefactSubmerge;
+    public Zone posHeliport;
     
     public CModele() {
 	zones = new Zone[LARGEUR][HAUTEUR];
@@ -51,6 +54,7 @@ class CModele extends Observable {
 		zones[i][j] = new Zone(this,i, j);
 	    }
 	}
+	artefactSubmerge = false;
 	joueurs = new ArrayList<Joueur>();
 	joueurActuel = 0;
 	nbActions = 0;
@@ -67,7 +71,7 @@ class CModele extends Observable {
 	
 	int x = rand.nextInt(LARGEUR);
 	int y = rand.nextInt(HAUTEUR);
-	ajouteJoueur(Color.PINK, "Martin Vitani",this.getZone(x, y));
+	ajouteJoueur(Color.PINK, "Joueur 1",this.getZone(x, y));
 	
 	x = rand.nextInt(LARGEUR);
 	y = rand.nextInt(HAUTEUR);
@@ -92,13 +96,13 @@ class CModele extends Observable {
 	    		x = rand.nextInt(LARGEUR);
 	    		y = rand.nextInt(HAUTEUR);
 	    	}
-	    	while (getZone(x,y).getArtefact()!=Artefact.aucun);
+	    	while (getZone(x,y).getArtefact()!=Artefact.aucun);	// J'ai choisi cette manière de choisir des cases de façon aléatoire.
 	    	switch(i) {
 	    	case 0 : getZone(x,y).addArtefact(Artefact.feu); System.out.println("- feu : ("+x+","+y+")"); break;
 	    	case 1 : getZone(x,y).addArtefact(Artefact.air); System.out.println("- air : ("+x+","+y+")"); break;
 	    	case 2 : getZone(x,y).addArtefact(Artefact.eau); System.out.println("- eau : ("+x+","+y+")"); break;
 	    	case 3 : getZone(x,y).addArtefact(Artefact.terre); System.out.println("- terre : ("+x+","+y+")"); break;
-	    	case 4 : getZone(x,y).addArtefact(Artefact.heliport); System.out.println("Position de l'heliport : ("+x+","+y+")"); break;
+	    	case 4 : getZone(x,y).addArtefact(Artefact.heliport); System.out.println("Position de l'heliport : ("+x+","+y+")"); posHeliport = getZone(x,y); break;
 	    	}
 	} artefacts.add(Artefact.feu); artefacts.add(Artefact.air); artefacts.add(Artefact.eau); artefacts.add(Artefact.terre);
 	cles.add(CleArtefact.feu); cles.add(CleArtefact.air); cles.add(CleArtefact.eau); cles.add(CleArtefact.terre);
@@ -124,6 +128,10 @@ class CModele extends Observable {
     	System.out.println("zone : ("+x+","+y+") inondee");
     	if(getZone(x,y).getEtat()==EtatZone.submergee) {
     		nbsubmergees++;
+    		if(getZone(x,y).getArtefact()!=Artefact.aucun) {
+    			System.out.println("La partie est perdue car un artefact est submergé");
+    			artefactSubmerge = true;
+    		}
     	}
     	}
     	}
@@ -168,9 +176,7 @@ class CModele extends Observable {
     
     public void tuerJoueur(int i) {
     	System.out.println("Le joueur "+joueurs.get(i).getNom()+" est mort"); 
-    	if(joueurs.get(i).getArtefactsJ().size()!=0) {
-    		System.out.println("La partie est perdue car "+joueurs.get(i).getNom()+" possédait un ou plusieurs artefacts !");
-    	}
+    	System.out.println("La partie est perdue");
     	joueurs.remove(i);
     }
 }
@@ -255,6 +261,12 @@ class Joueur {
 	public void removeCle(CleArtefact c) {
 		clesJ.remove(c);
 		modele.cles.add(c);
+	}
+	public void donneCle(Joueur j) {
+		CleArtefact c = this.clesJ.get(0);
+		j.getClesJ().add(c);
+		System.out.println("Le joueur "+this.getNom()+" donne sa cle de "+c+" au joueur "+j.getNom());
+		this.useCle(c);
 	}
 }
 
@@ -363,13 +375,6 @@ class VueGrille extends JPanel implements Observer {
 	}
 	
 	}
-    /**
-     * Fonction auxiliaire de dessin d'une cellule.
-     * Ici, la classe [Cellule] ne peut être désignée que par l'intermédiaire
-     * de la classe [CModele] à laquelle elle est interne, d'où le type
-     * [CModele.Cellule].
-     * Ceci serait impossible si [Cellule] était déclarée privée dans [CModele].
-     */
     private void paint(Graphics g, Zone zone, int x, int y) {
 	if (zone.etat==EtatZone.normale) {
 	    g.setColor(Color.WHITE);
@@ -378,13 +383,13 @@ class VueGrille extends JPanel implements Observer {
         g.setColor(Color.GRAY);
         }
 	else { g.setColor(Color.BLACK); }
-    	g.fillRect(x, y, TAILLE*3, TAILLE*3);
+    	g.fillRect(x, y, TAILLE*3, TAILLE*3);	// Les cases sont de taille : TAILLE*3 par TAILLE*3 pour faciliter les autres affichages
 }
     
     private void paint2(Graphics g, Zone zone, int x, int y) {
 
     	if(zone.getEtat()!=EtatZone.submergee) {
-    	switch(zone.getArtefact()) {
+    	switch(zone.getArtefact()) {	// On affiche des artefacts de taille : TAILLE par TAILLE
     	case aucun : break;
     	case eau : g.setColor(Color.BLUE); g.fillRect(x, y, TAILLE, TAILLE); break;
     	case feu : g.setColor(Color.RED); g.fillRect(x, y, TAILLE, TAILLE); break;
@@ -397,7 +402,7 @@ class VueGrille extends JPanel implements Observer {
     
     private void paintJ(Graphics g, Zone zone, int x, int y, Color c) {
     	g.setColor(c);
-    	g.fillRect(x, y, TAILLE/2, TAILLE*3/2);
+    	g.fillRect(x, y, TAILLE/2, TAILLE*3/2);	// La hauteur du joueur est 3 fois plus grande que sa largeur.
     }
 }
 
@@ -415,12 +420,12 @@ class VueCommandes extends JPanel {
     private JButton assechDroite;
     private JButton assechIci;
     private JButton deverouiller;
-
+    private JButton donnerCle;
+    
     public VueCommandes(CModele modele) {
 	this.modele = modele;
 	
 	Init();
-	
     }
     
     public void Init() {
@@ -476,6 +481,11 @@ class VueCommandes extends JPanel {
     	deverouiller.addActionListener(ctrl);
     	deverouiller.setActionCommand("Unlock");
     	
+    	donnerCle = new JButton("Donner Cle");
+    	this.add(donnerCle);
+    	donnerCle.addActionListener(ctrl);
+    	donnerCle.setActionCommand("Donner");
+    	
     	finDeTour = new JButton("Fin");
     	this.add(finDeTour);
     	finDeTour.addActionListener(ctrl);
@@ -517,19 +527,19 @@ class VueCommandes extends JPanel {
     public JButton getDeverouiller() {
     	return deverouiller;
     }
+    public JButton getEchange() {
+    	return donnerCle;
+    }
 }
 
 class Controleur implements ActionListener {
-	public boolean partiePerdue;
+	public boolean partieTerminee;
     CModele modele;
     VueCommandes vue;
-    public Controleur(CModele modele, VueCommandes vue) { this.modele = modele; this.vue = vue; this.partiePerdue=false;}
+    public Controleur(CModele modele, VueCommandes vue) { this.modele = modele; this.vue = vue; this.partieTerminee=false;}
     public void actionPerformed(ActionEvent e) {
-    	if(modele.joueurs.size()==0) {
-    		partiePerdue = true;
-    	}
     	
-    	if(modele.getNbActions() < 3 && modele.joueurs.size()!=0) {
+    	if(modele.getNbActions() < 3 && !partieTerminee) {
     		
     		vue.getfinDeTour().setEnabled(false);
 			Joueur j = modele.joueurs.get(modele.getJoueurActuel());
@@ -563,27 +573,37 @@ class Controleur implements ActionListener {
     		case "AssechHaut" :
     			if(j.getPos().getY() > 0 && modele.getZone(j.getPos().getX(), j.getPos().getY()-1).getEtat() == EtatZone.inondee) {
     				Zone zoneHaut = modele.getZone(j.getPos().getX(),j.getPos().getY()-1);
-    				System.out.println("Le joueur "+j.getNom()+" asseche la zone ("+zoneHaut.getX()+","+zoneHaut.getY()+")"); zoneHaut.assecher(); modele.effectueAction();;
+    				System.out.println("Le joueur "+j.getNom()+" asseche la zone ("+zoneHaut.getX()+","+zoneHaut.getY()+")"); 
+    				zoneHaut.assecher(); 
+    				modele.effectueAction();;
     			} break;
     			
     		case "AssechBas" :
     			if(j.getPos().getY() < modele.HAUTEUR-1 && modele.getZone(j.getPos().getX(), j.getPos().getY()+1).getEtat() == EtatZone.inondee) {
     				Zone zoneBas = modele.getZone(j.getPos().getX(),j.getPos().getY()+1);
-    				System.out.println("Le joueur "+j.getNom()+" asseche la zone ("+zoneBas.getX()+","+zoneBas.getY()+")"); zoneBas.assecher(); modele.effectueAction();;
+    				System.out.println("Le joueur "+j.getNom()+" asseche la zone ("+zoneBas.getX()+","+zoneBas.getY()+")"); 
+    				zoneBas.assecher(); 
+    				modele.effectueAction();;
     			} break;
     		case "AssechGauche" :
     			if(j.getPos().getX() > 0 && modele.getZone(j.getPos().getX()-1, j.getPos().getY()).getEtat() == EtatZone.inondee) {
     				Zone zoneGauche = modele.getZone(j.getPos().getX()-1,j.getPos().getY());
-    				System.out.println("Le joueur "+j.getNom()+" asseche la zone ("+zoneGauche.getX()+","+zoneGauche.getY()+")"); zoneGauche.assecher(); modele.effectueAction();;
+    				System.out.println("Le joueur "+j.getNom()+" asseche la zone ("+zoneGauche.getX()+","+zoneGauche.getY()+")"); 
+    				zoneGauche.assecher(); 
+    				modele.effectueAction();;
     			} break;
     		case "AssechDroite" :
     			if(j.getPos().getX() < modele.LARGEUR && modele.getZone(j.getPos().getX()+1, j.getPos().getY()).getEtat() == EtatZone.inondee) {
     				Zone zoneDroite = modele.getZone(j.getPos().getX()+1,j.getPos().getY());
-    				System.out.println("Le joueur "+j.getNom()+" asseche la zone ("+zoneDroite.getX()+","+zoneDroite.getY()+")"); zoneDroite.assecher(); modele.effectueAction();;
+    				System.out.println("Le joueur "+j.getNom()+" asseche la zone ("+zoneDroite.getX()+","+zoneDroite.getY()+")"); 
+    				zoneDroite.assecher(); 
+    				modele.effectueAction();;
     			} break;
     		case "AssechIci" :
     			if(j.getPos().getEtat() == EtatZone.inondee) {
-    				System.out.println("Le joueur "+j.getNom()+" asseche la zone ("+j.getPos().getX()+","+j.getPos().getY()+")"); j.getPos().assecher(); modele.effectueAction();;
+    				System.out.println("Le joueur "+j.getNom()+" asseche la zone ("+j.getPos().getX()+","+j.getPos().getY()+")"); 
+    				j.getPos().assecher(); 
+    				modele.effectueAction();;
     			} break;
     			
     		case "Unlock" :
@@ -616,6 +636,15 @@ class Controleur implements ActionListener {
     					modele.effectueAction();
     				} break;
     			}
+    		case "Donner" :
+    			Zone p = j.getPos();
+    			if(j.getClesJ().size()!=0) {
+    				for(int i=0; i<modele.joueurs.size();i++) {
+    					if(i!=modele.getJoueurActuel() && modele.joueurs.get(i).getPos()==p) {
+    						j.donneCle(modele.joueurs.get(i));
+    					}
+    				}
+    			}
     		}
     		if(modele.getNbActions()==3) {
     			vue.getfinDeTour().setEnabled(true);
@@ -624,22 +653,33 @@ class Controleur implements ActionListener {
     	}
     	else {
     	
-    	if(e.getActionCommand()=="Tour") {
+    	if(e.getActionCommand()=="Tour" && !partieTerminee) {
     		Joueur j = modele.joueurs.get(modele.getJoueurActuel());
 			System.out.println("");
 	    	j.chercheCle();
     		System.out.println("");
 			System.out.println("Fin du tour de "+j.getNom());
 			modele.inondation();
-			
+			if(modele.artefactSubmerge) {
+				partieTerminee = true;
+			}
 			testNoyade();
-			
-			modele.nextPlayer();
-			j = modele.joueurs.get(modele.getJoueurActuel());
-			System.out.println("C'est au tour de "+j.getNom()+", situé sur la case ("+j.getPos().getX()+","+j.getPos().getY()+") de jouer !");
-			vue.getfinDeTour().setEnabled(false);
-			afficheBoutons(true);
-    }
+			testVictoire();
+			if(!partieTerminee) {
+				modele.nextPlayer();
+				j = modele.joueurs.get(modele.getJoueurActuel());
+				System.out.println("C'est au tour de "+j.getNom()+", situé sur la case ("+j.getPos().getX()+","+j.getPos().getY()+") de jouer !");
+				for(int i=0; i<j.getClesJ().size();i++) {
+					System.out.println(j.getNom()+" possède "+" la cle "+j.getClesJ().get(i));
+				}
+				for(int i=0; i<j.getArtefactsJ().size();i++) {
+					System.out.println(j.getNom()+" possède "+" l'artefact "+j.getArtefactsJ().get(i));
+				}
+				vue.getfinDeTour().setEnabled(false);
+				afficheBoutons(true);
+			}
+    	}else { vue.getfinDeTour().setEnabled(false); }
+    	
     }
     } public void afficheBoutons(boolean b) {
 		vue.getBoutonGauche().setEnabled(b);
@@ -652,6 +692,7 @@ class Controleur implements ActionListener {
     	vue.getAssechBas().setEnabled(b);
     	vue.getAssechIci().setEnabled(b);
     	vue.getDeverouiller().setEnabled(b);
+    	vue.getEchange().setEnabled(b);
     	
     }
     public void testNoyade() {
@@ -671,9 +712,19 @@ class Controleur implements ActionListener {
 					System.out.println("Le joueur "+j.getNom()+" se déplace vers la Droite pour éviter la noyade"); 
 					j.deplacementDroite(); 
 	    		}else {
-	    			modele.tuerJoueur(i);
+	    			modele.tuerJoueur(i); partieTerminee = true;
 	    		}
 	    	}
 	    	}
+    }
+    public void testVictoire() {
+    	boolean joueursSurHeliport = true;
+    	for(int i=0; i<modele.joueurs.size();i++) {
+    		if(modele.joueurs.get(i).getPos()!=modele.posHeliport) { joueursSurHeliport = false;}
+    	}
+    	if(modele.artefacts.size()==0 && joueursSurHeliport) {
+    		System.out.println("Partie gagnée !"); 
+    		partieTerminee = true;
+    	}
     }
 }
